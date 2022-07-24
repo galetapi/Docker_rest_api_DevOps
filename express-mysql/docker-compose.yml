@@ -1,0 +1,55 @@
+version: "3.8"
+
+services:
+  express_rest_api:
+    container_name: my_express_rest_api
+    build: ./app/
+    environment:
+      - DB_PORT=3306
+      - DB_HOST=mysql_db
+    ports:
+      - "8000:3000"
+    depends_on:
+      - mysql_db
+    networks:
+      - docker_pirate_net
+    restart: on-failure
+    # esto limita la cantidad de memoria en la nube
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+  mysql_db:
+    container_name: my_mysql_db
+    image: mysql:latest
+    # Important command to allow legacy authentications for old versions
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    environment:
+      MYSQL_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: employees
+    expose:
+      - "3306"
+    ports:
+      - "3309:3306"
+      #los volumnes es la forma de conectar y guardar la informacion o el Data storage 
+    volumes:
+      - docker_pirate_mysql_db_volume:/var/lib/mysql # volumen nomenclador directamente administrado por Docker
+      - ./db:/docker-entrypoint-initdb.d # con este comando nos activa las sentencias de comandos SQL 
+    networks:
+      - docker_pirate_net
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+volumes:
+  docker_pirate_mysql_db_volume:
+    name: "docker_pirate_mysql_db_volume"
+    
+#comunicar los contenedores
+networks:
+  docker_pirate_net:
+    driver: bridge
+    name: docker_pirate_net
